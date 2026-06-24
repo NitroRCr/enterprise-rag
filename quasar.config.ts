@@ -2,6 +2,10 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app/wrappers'
+import { fileURLToPath } from 'node:url'
+
+const TARGET_APP = process.env.TARGET_APP === 'admin' ? 'admin' : 'front'
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -75,13 +79,26 @@ export default defineConfig((/* ctx */) => {
           }
         }, { server: false }],
         ['unocss/vite']
-      ]
+      ],
+
+      alias: {
+        '@routes': fileURLToPath(
+          new URL(`./src/${TARGET_APP === 'admin' ? 'admin' : 'router'}/routes`, import.meta.url)
+        )
+      }
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     devServer: {
       // https: true,
-      open: false // opens browser window automatically
+      open: false, // opens browser window automatically
+      port: TARGET_APP === 'admin' ? 9200 : 9100,
+      proxy: {
+        '/api': {
+          target: SERVER_URL,
+          changeOrigin: true
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework
@@ -102,7 +119,9 @@ export default defineConfig((/* ctx */) => {
       plugins: [
         'Notify',
         'Dark',
-        'Dialog'
+        'Dialog',
+        'LocalStorage',
+        'Loading'
       ]
     },
 
