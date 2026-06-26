@@ -6,25 +6,6 @@ import { fileURLToPath } from 'node:url'
 
 const TARGET_APP = process.env.TARGET_APP === 'admin' ? 'admin' : 'front'
 const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000'
-const IS_BUN = typeof Bun !== 'undefined' || Boolean(process.versions?.bun)
-const UNOCSS_VITE_PLUGIN: [string] = ['unocss/vite']
-const CHECKER_VITE_PLUGIN: [string, {
-  vueTsc: boolean
-  eslint: {
-    lintCommand: string
-    useFlatConfig: boolean
-  }
-}, { server: boolean }] = [
-  'vite-plugin-checker',
-  {
-    vueTsc: true,
-    eslint: {
-      lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
-      useFlatConfig: true
-    }
-  },
-  { server: false }
-]
 
 export default defineConfig((/* ctx */) => {
   return {
@@ -89,9 +70,16 @@ export default defineConfig((/* ctx */) => {
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
 
-      vitePlugins: IS_BUN
-        ? [UNOCSS_VITE_PLUGIN]
-        : [CHECKER_VITE_PLUGIN, UNOCSS_VITE_PLUGIN],
+      vitePlugins: [
+        ['vite-plugin-checker', {
+          vueTsc: true,
+          eslint: {
+            lintCommand: 'eslint -c ./eslint.config.js "./src*/**/*.{ts,js,mjs,cjs,vue}"',
+            useFlatConfig: true
+          }
+        }, { server: false }],
+        ['unocss/vite']
+      ],
 
       alias: {
         '@routes': fileURLToPath(

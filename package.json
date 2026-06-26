@@ -10,13 +10,13 @@
     "lint": "eslint -c ./eslint.config.js \"./src*/**/*.{ts,js,cjs,mjs,vue}\"",
     "test": "echo \"No test specified\" && exit 0",
     "dev:server": "bun run --hot src-server/index.ts",
-    "dev:front": "TARGET_APP=front bun --bun quasar dev",
-    "dev:admin": "TARGET_APP=admin bun --bun quasar dev",
+    "dev:front": "TARGET_APP=front bun quasar dev",
+    "dev:admin": "TARGET_APP=admin bun quasar dev",
     "build:server": "bun build src-server/index.ts --target bun --outdir ./dist/server",
-    "build:front": "TARGET_APP=front bun --bun quasar build",
-    "build:admin": "TARGET_APP=admin bun --bun quasar build",
+    "build:front": "TARGET_APP=front bun quasar build",
+    "build:admin": "TARGET_APP=admin bun quasar build",
     "generate:auth": "bunx --bun @better-auth/cli@latest generate --config src-server/auth/auth.ts --output src-server/schema/auth.gen.ts -y",
-    "postinstall": "bun --bun quasar prepare"
+    "postinstall": "bun quasar prepare"
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^2.0.35",
