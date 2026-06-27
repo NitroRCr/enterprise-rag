@@ -60,7 +60,7 @@ const app = new Hono<AuthEnv>()
   })
   .post('/:id/default', requireAdmin, async c => {
     const id = c.req.param('id')
-    const m = await db.select().from(model).where(eq(model.id, id)).get()
+    const m = db.select().from(model).where(eq(model.id, id)).get()
     if (!m) return c.json({ error: 'Not found' }, 404)
     await db.update(model).set({ isDefault: false })
     await db.update(model).set({ isDefault: true }).where(eq(model.id, id))

@@ -30,7 +30,7 @@ const app = new Hono<AuthEnv>()
     const form = await c.req.formData()
     const knowledgeBaseId = form.get('knowledgeBaseId')?.toString()
     if (!knowledgeBaseId) return c.json({ error: 'knowledgeBaseId required' }, 400)
-    const kb = await db.select().from(knowledgeBase).where(eq(knowledgeBase.id, knowledgeBaseId)).get()
+    const kb = db.select().from(knowledgeBase).where(eq(knowledgeBase.id, knowledgeBaseId)).get()
     if (!kb) return c.json({ error: 'Knowledge base not found' }, 404)
 
     const files = form.getAll('files').filter((f): f is File => f instanceof File)
@@ -93,17 +93,17 @@ const app = new Hono<AuthEnv>()
     })))
   })
   // 单个文档完整内容（文档页使用）
-  .get('/:id', requireAuth, async c => {
+  .get('/:id', requireAuth, c => {
     const id = c.req.param('id')
-    const row = await db.select().from(document).where(eq(document.id, id)).get()
+    const row = db.select().from(document).where(eq(document.id, id)).get()
     if (!row) return c.json({ error: 'Not found' }, 404)
-    const kb = await db.select({ name: knowledgeBase.name }).from(knowledgeBase).where(eq(knowledgeBase.id, row.knowledgeBaseId)).get()
+    const kb = db.select({ name: knowledgeBase.name }).from(knowledgeBase).where(eq(knowledgeBase.id, row.knowledgeBaseId)).get()
     return c.json({ ...row, knowledgeBaseName: kb?.name ?? '' })
   })
   // 下载原始文件
   .get('/:id/download', requireAuth, async c => {
     const id = c.req.param('id')
-    const row = await db.select().from(document).where(eq(document.id, id)).get()
+    const row = db.select().from(document).where(eq(document.id, id)).get()
     if (!row) return c.json({ error: 'Not found' }, 404)
     const file = Bun.file(join(UPLOAD_DIR, row.filePath))
     if (!(await file.exists())) return c.json({ error: 'File missing' }, 404)

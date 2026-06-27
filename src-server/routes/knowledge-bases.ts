@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { and, desc, eq, sql } from 'drizzle-orm'
+import { desc, eq, sql } from 'drizzle-orm'
 import { db } from '../utils/db'
 import { document, knowledgeBase } from '../schema'
 import { genId } from 'app/src-shared/utils/id'
@@ -47,7 +47,7 @@ const app = new Hono<AuthEnv>()
   // 设为默认知识库
   .post('/:id/default', requireAdmin, async c => {
     const id = c.req.param('id')
-    const kb = await db.select().from(knowledgeBase).where(eq(knowledgeBase.id, id)).get()
+    const kb = db.select().from(knowledgeBase).where(eq(knowledgeBase.id, id)).get()
     if (!kb) return c.json({ error: 'Not found' }, 404)
     await db.update(knowledgeBase).set({ isDefault: false })
     await db.update(knowledgeBase).set({ isDefault: true }).where(eq(knowledgeBase.id, id))

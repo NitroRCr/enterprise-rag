@@ -15,7 +15,7 @@ const app = new Hono<AuthEnv>()
     const modelName = body.model
 
     // 按模型名查找对应服务商
-    const row = await db
+    const row = db
       .select({ baseUrl: provider.baseUrl, apiKey: provider.apiKey, enabled: provider.enabled })
       .from(model)
       .leftJoin(provider, eq(model.providerId, provider.id))

@@ -8,19 +8,19 @@ import { requireAdmin, requireAuth, type AuthEnv } from '../utils/auth-guard'
 import { getGlobalSettings, updateGlobalSettings } from '../utils/seed'
 import { SITE_NAME } from '../utils/config'
 
-async function adminCount() {
-  const row = await db.select({ n: sql<number>`count(*)` }).from(user).where(eq(user.role, 'admin')).get()
+function adminCount() {
+  const row = db.select({ n: sql<number>`count(*)` }).from(user).where(eq(user.role, 'admin')).get()
   return Number(row?.n ?? 0)
 }
 
 const app = new Hono<AuthEnv>()
   // 公开配置（用于登录页判断是否需要首位管理员）
-  .get('/config', async c => {
-    return c.json({ siteName: SITE_NAME, hasAdmin: (await adminCount()) > 0 })
+  .get('/config', c => {
+    return c.json({ siteName: SITE_NAME, hasAdmin: adminCount() > 0 })
   })
   // 首位用户领取管理员角色
   .post('/acquire-admin', requireAuth, async c => {
-    if ((await adminCount()) > 0) return c.json({ error: '管理员已存在' }, 403)
+    if (adminCount() > 0) return c.json({ error: '管理员已存在' }, 403)
     const u = c.get('user')
     await db.update(user).set({ role: 'admin' }).where(eq(user.id, u.id))
     return c.json({ ok: true })

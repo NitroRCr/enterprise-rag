@@ -19,7 +19,7 @@ const app = new Hono<AuthEnv>()
     knowledgeBaseIds: z.array(z.string()).default([]),
     query: z.string().min(1),
     limit: z.number().int().min(1).max(50).default(15)
-  })), async c => {
+  })), c => {
     const { knowledgeBaseIds, query, limit } = c.req.valid('json')
 
     // 将查询词作为 FTS5 短语处理，转义内部双引号，避免语法字符破坏匹配
@@ -29,7 +29,7 @@ const app = new Hono<AuthEnv>()
       ? sql`AND d.knowledge_base_id IN (${sql.join(knowledgeBaseIds.map(id => sql`${id}`), sql`, `)})`
       : sql``
 
-    const rows = db.all(sql`
+    const rows = db.all<Row>(sql`
       SELECT
         d.id AS id,
         d.name AS name,

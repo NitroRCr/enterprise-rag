@@ -1,5 +1,5 @@
 export function sizeBytes(size: string) {
-  const unit = size.at(-1).toUpperCase()
+  const unit = (size.at(-1) ?? '').toUpperCase()
   const value = +size.slice(0, -1)
   if (unit === 'B') return value
   if (unit === 'K') return value * 1024
@@ -19,7 +19,7 @@ export function formatBytes(bytes: number) {
 }
 
 export function getExt(filename: string) {
-  return filename.includes('.') ? filename.split('.').pop().toLowerCase() : ''
+  return filename.includes('.') ? (filename.split('.').pop() ?? '').toLowerCase() : ''
 }
 
 export function pick<T extends object, K extends keyof T>(obj: T, keys: K[]) {

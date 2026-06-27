@@ -7,7 +7,7 @@ const GLOBAL_ID = 'global'
 
 /** 读取全局设置（不存在则创建空行） */
 export async function getGlobalSettings() {
-  let row = await db.select().from(globalSettings).where(eq(globalSettings.id, GLOBAL_ID)).get()
+  let row = db.select().from(globalSettings).where(eq(globalSettings.id, GLOBAL_ID)).get()
   if (!row) {
     row = { id: GLOBAL_ID, defaultModelName: null, defaultKnowledgeBaseId: null }
     await db.insert(globalSettings).values(row).onConflictDoNothing()

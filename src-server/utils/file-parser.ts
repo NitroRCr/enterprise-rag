@@ -34,7 +34,7 @@ async function parseXlsx(buf: ArrayBuffer): Promise<ParseResult> {
   const { read, utils } = await import('xlsx-republish')
   const workbook = read(new Uint8Array(buf))
   const content = workbook.SheetNames.map(name => {
-    const rows = utils.sheet_to_json(workbook.Sheets[name], { header: 1 })
+    const rows = utils.sheet_to_json<unknown[]>(workbook.Sheets[name], { header: 1 })
     return `## ${name}\n\n${rowsToMarkdown(rows)}`
   }).join('\n\n')
   return { content, language: 'markdown' }
@@ -44,7 +44,7 @@ function parsePptx(buf: ArrayBuffer): ParseResult {
   const files = unzipSync(new Uint8Array(buf))
   const slideNames = Object.keys(files)
     .filter(name => /^ppt\/slides\/slide\d+\.xml$/.test(name))
-    .sort((a, b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]))
+    .sort((a, b) => parseInt(a.match(/\d+/)?.[0] ?? '0') - parseInt(b.match(/\d+/)?.[0] ?? '0'))
 
   const slides = slideNames.map((name, i) => {
     const xml = strFromU8(files[name])
