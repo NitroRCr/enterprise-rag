@@ -102,7 +102,7 @@
             v-model="form.name"
             outlined
             dense
-            label="模型名（上游真实名称，如 gpt-4o-mini）"
+            label="模型名"
             color="pri"
           />
           <q-input
@@ -140,7 +140,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Dialog as QDialog, Notify, type QTableColumn } from 'quasar'
+import { Dialog, Notify, type QTableColumn } from 'quasar'
 import { api, unwrap } from 'src/utils/hc'
 import type { Model, Provider } from 'app/src-shared/utils/types'
 
@@ -210,7 +210,7 @@ async function setDefault(id: string) {
 }
 
 function remove(row: Model) {
-  QDialog.create({
+  Dialog.create({
     title: '删除模型',
     message: `确定删除「${row.label || row.name}」？`,
     cancel: true,

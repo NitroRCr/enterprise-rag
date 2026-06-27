@@ -82,7 +82,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { Dark, Dialog as QDialog, Notify, type QTableColumn } from 'quasar'
+import { Dark, Dialog, Notify, type QTableColumn } from 'quasar'
 import { MdPreview } from 'md-editor-v3'
 import { api, unwrap } from 'src/utils/hc'
 import { formatBytes } from 'app/src-shared/utils/functions'
@@ -129,7 +129,7 @@ function download(id: string) {
 }
 
 function remove(row: DocumentInfo) {
-  QDialog.create({
+  Dialog.create({
     title: '删除文档',
     message: `确定删除「${row.name}」？此操作不可恢复。`,
     cancel: true,

@@ -88,7 +88,8 @@
             v-model="form.baseUrl"
             outlined
             dense
-            label="Base URL（OpenAI 兼容，如 https://api.openai.com/v1）"
+            label="Base URL"
+            placeholder="https://api.openai.com/v1"
             color="pri"
           />
           <q-input
@@ -132,7 +133,7 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
-import { Dialog as QDialog, Notify, type QTableColumn } from 'quasar'
+import { Dialog, Notify, type QTableColumn } from 'quasar'
 import { api, unwrap } from 'src/utils/hc'
 import type { Provider } from 'app/src-shared/utils/types'
 
@@ -197,7 +198,7 @@ async function save() {
 }
 
 function remove(row: Provider) {
-  QDialog.create({
+  Dialog.create({
     title: '删除服务商',
     message: `确定删除「${row.name}」？`,
     cancel: true,

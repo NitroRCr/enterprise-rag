@@ -51,7 +51,7 @@
         label="密码"
         :disable="loading"
         color="pri"
-        :rules="[v => (v && v.length >= 6) || '密码至少 6 位']"
+        :rules="[v => (v && v.length >= 8) || '密码至少 8 位']"
         hide-bottom-space
       />
       <q-btn
@@ -107,7 +107,7 @@ function toggle() {
 }
 
 async function submit() {
-  if (!email.value || password.value.length < 6) return
+  if (!email.value || password.value.length < 8) return
   loading.value = true
   try {
     const res = mode.value === 'signin'
