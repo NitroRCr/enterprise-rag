@@ -77,8 +77,8 @@ async function newChat() {
   await createDialog(defaultKbIds(), defaultModel())
   router.push('/')
 }
-async function open(id: string) {
-  await selectDialog(id)
+function open(id: string) {
+  selectDialog(id)
   router.push('/')
 }
 function remove(id: string) {

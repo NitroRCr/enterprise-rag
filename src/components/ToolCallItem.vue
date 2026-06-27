@@ -104,10 +104,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import type { ToolCallRecord } from 'src/utils/types'
+import type { AssistantToolContent } from 'src/utils/types'
 import type { SearchResult } from 'app/src-shared/utils/types'
 
-const props = defineProps<{ call: ToolCallRecord }>()
+const props = defineProps<{ call: AssistantToolContent }>()
 const router = useRouter()
 const open = ref(false)
 
@@ -115,7 +115,10 @@ const isSearch = computed(() => props.call.name === 'search')
 const icon = computed(() => (isSearch.value ? 'sym_o_search' : 'sym_o_article'))
 const title = computed(() => (isSearch.value ? '搜索知识库' : '获取文档'))
 const subtitle = computed(() => {
-  if (isSearch.value) return String(props.call.args.query ?? '')
+  if (isSearch.value) {
+    const q = props.call.args.query
+    return typeof q === 'string' ? q : ''
+  }
   const ids = props.call.args.ids as string[] | undefined
   return ids ? `${ids.length} 个文档` : ''
 })

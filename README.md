@@ -37,7 +37,7 @@ src-server/        服务端（Hono）
   utils/           db(含 FTS5) / file-parser / auth-guard / seed / config
 src-shared/        前后端共享类型与工具（id 生成、types）
 src/               用户端（front）
-  composables/     useChat / useStream / useSetTheme
+  composables/     useChat（树状分支会话 + 流式 + 重试/编辑）/ useChatScroll / useMdProps / useFileURL / useSetTheme
   utils/           hc(RPC) / auth-client / model / ai-tools / db(dexie) / system-prompt
   pages/ layouts/ components/
 src/admin/         管理端（admin）
