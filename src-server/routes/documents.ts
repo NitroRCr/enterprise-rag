@@ -6,6 +6,8 @@ import { db } from '../utils/db'
 import { document, knowledgeBase } from '../schema'
 import { genId } from 'app/src-shared/utils/id'
 import { requireAdmin, requireAuth, type AuthEnv } from '../utils/auth-guard'
+import { getVisibleKbIds } from '../utils/access'
+import { logCall } from '../utils/observability'
 import { parseFile } from '../utils/file-parser'
 import { getExt } from 'app/src-shared/utils/functions'
 import { UPLOAD_DIR } from '../utils/config'
@@ -84,7 +86,21 @@ const app = new Hono<AuthEnv>()
   })), async c => {
     const { ids } = c.req.valid('json')
     const rows = await db.select().from(document).where(inArray(document.id, ids))
-    return c.json(rows.map(r => ({
+    // 部门越权防护：非管理员仅能取其可见知识库下的文档
+    const visible = getVisibleKbIds(c.get('user'))
+    const filtered = visible === null
+      ? rows
+      : rows.filter(r => visible.includes(r.knowledgeBaseId))
+    // 记录知识库取文档调用
+    logCall({
+      type: 'kb',
+      userId: c.get('user').id,
+      knowledgeBaseIds: [...new Set(filtered.map(r => r.knowledgeBaseId))],
+      resultCount: filtered.length,
+      durationMs: 0,
+      success: true
+    })
+    return c.json(filtered.map(r => ({
       id: r.id,
       name: r.name,
       knowledgeBaseId: r.knowledgeBaseId,
@@ -97,6 +113,8 @@ const app = new Hono<AuthEnv>()
     const id = c.req.param('id')
     const row = db.select().from(document).where(eq(document.id, id)).get()
     if (!row) return c.json({ error: 'Not found' }, 404)
+    const visible = getVisibleKbIds(c.get('user'))
+    if (visible !== null && !visible.includes(row.knowledgeBaseId)) return c.json({ error: 'Forbidden' }, 403)
     const kb = db.select({ name: knowledgeBase.name }).from(knowledgeBase).where(eq(knowledgeBase.id, row.knowledgeBaseId)).get()
     return c.json({ ...row, knowledgeBaseName: kb?.name ?? '' })
   })
@@ -105,6 +123,8 @@ const app = new Hono<AuthEnv>()
     const id = c.req.param('id')
     const row = db.select().from(document).where(eq(document.id, id)).get()
     if (!row) return c.json({ error: 'Not found' }, 404)
+    const visible = getVisibleKbIds(c.get('user'))
+    if (visible !== null && !visible.includes(row.knowledgeBaseId)) return c.json({ error: 'Forbidden' }, 403)
     const file = Bun.file(join(UPLOAD_DIR, row.filePath))
     if (!(await file.exists())) return c.json({ error: 'File missing' }, 404)
     return new Response(file, {

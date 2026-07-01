@@ -95,6 +95,26 @@
               @click="$emit('regenerate')"
             />
             <q-btn
+              v-if="isAssistant && textContent"
+              icon="sym_o_thumb_up"
+              :class="feedbackRating === 1 ? 'text-pri' : ''"
+              flat
+              round
+              size="sm"
+              title="有帮助"
+              @click="submitFeedback(1)"
+            />
+            <q-btn
+              v-if="isAssistant && textContent"
+              icon="sym_o_thumb_down"
+              :class="feedbackRating === -1 ? 'text-err' : ''"
+              flat
+              round
+              size="sm"
+              title="无帮助"
+              @click="submitFeedback(-1)"
+            />
+            <q-btn
               v-if="isUser"
               icon="sym_o_edit"
               flat
@@ -274,6 +294,7 @@ import { useRouter } from 'vue-router'
 import { copyToClipboard, Dialog, Notify } from 'quasar'
 import { MdPreview, MdCatalog, type HeadList } from 'md-editor-v3'
 import { db } from 'src/utils/db'
+import { api } from 'src/utils/hc'
 import type { AssistantMessageContent, AssistantToolContent, Message, StoredItem, UserMessageContent } from 'src/utils/types'
 import { idDateString } from 'app/src-shared/utils/id'
 import { useMdProps } from 'src/composables/useMdProps'
@@ -288,6 +309,7 @@ const props = defineProps<{
   dense?: boolean
   inputing?: boolean
   itemMap: Record<string, StoredItem>
+  knowledgeBaseIds?: string[]
 }>()
 
 const model = defineModel<number>({ default: 1 })
@@ -306,6 +328,7 @@ const headList = ref<HeadList[]>([])
 
 const isUser = computed(() => props.message.type === 'user')
 const isAssistant = computed(() => props.message.type === 'assistant')
+const feedbackRating = computed(() => props.message.feedback ?? null)
 const name = computed(() => (isAssistant.value ? 'AI 助手' : ''))
 const generating = computed(() => ['pending', 'streaming'].includes(props.message.status))
 const actionable = computed(() => ['default', 'failed'].includes(props.message.status))
@@ -342,6 +365,27 @@ const timeText = computed(() => {
 
 function copy() {
   copyToClipboard(textContent.value).then(() => Notify.create({ message: '已复制', timeout: 1000 }))
+}
+
+async function submitFeedback(rating: 1 | -1) {
+  const current = feedbackRating.value
+  const next = current === rating ? null : rating
+  // 乐观更新本地回显
+  await db.messages.update(props.message.id, { feedback: next })
+  try {
+    await api.feedback.$post({
+      json: {
+        messageId: props.message.id,
+        knowledgeBaseIds: props.knowledgeBaseIds ?? [],
+        modelName: props.message.modelName ?? null,
+        rating
+      }
+    })
+  } catch (e) {
+    // 失败回滚
+    await db.messages.update(props.message.id, { feedback: current })
+    Notify.create({ message: (e as Error).message || '反馈失败', color: 'err', textColor: 'on-err' })
+  }
 }
 
 function deleteBranch() {

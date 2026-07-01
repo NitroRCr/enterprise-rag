@@ -1,8 +1,8 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { admin } from 'better-auth/plugins'
+import { admin, mcp } from 'better-auth/plugins'
 import { db } from '../utils/db'
-import { user, session, account, verification } from '../schema/auth'
+import { user, session, account, verification, oauthApplication, oauthAccessToken, oauthConsent } from '../schema/auth'
 import { SITE_NAME, SERVER_URL, FRONT_URL, ADMIN_URL, BETTER_AUTH_SECRET } from '../utils/config'
 import { genId } from 'app/src-shared/utils/id'
 
@@ -13,7 +13,7 @@ export const auth = betterAuth({
   trustedOrigins: [FRONT_URL, ADMIN_URL],
   database: drizzleAdapter(db, {
     provider: 'sqlite',
-    schema: { user, session, account, verification }
+    schema: { user, session, account, verification, oauthApplication, oauthAccessToken, oauthConsent }
   }),
   emailAndPassword: {
     enabled: true,
@@ -33,7 +33,11 @@ export const auth = betterAuth({
       maxAge: 300
     }
   },
-  plugins: [admin()],
+  plugins: [
+    admin(),
+    // MCP OAuth（动态客户端注册 + 授权码），loginPage 指向用户端登录页
+    mcp({ loginPage: `${FRONT_URL}/auth` })
+  ],
   advanced: {
     database: {
       generateId: () => genId()

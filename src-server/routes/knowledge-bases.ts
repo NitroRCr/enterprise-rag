@@ -3,24 +3,44 @@ import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { desc, eq, sql } from 'drizzle-orm'
 import { db } from '../utils/db'
-import { document, knowledgeBase } from '../schema'
+import { document, knowledgeBase, knowledgeBaseDepartment } from '../schema'
 import { genId } from 'app/src-shared/utils/id'
 import { requireAdmin, requireAuth, type AuthEnv } from '../utils/auth-guard'
+import { getVisibleKbIds, isAdmin } from '../utils/access'
 import { updateGlobalSettings } from '../utils/seed'
 import { rm } from 'node:fs/promises'
 import { UPLOAD_DIR } from '../utils/config'
 import { join } from 'node:path'
 
 const app = new Hono<AuthEnv>()
-  // 列出全部知识库（含文档数）
+  // 列出知识库（普通用户仅见所属部门关联的知识库；管理员见全部并附带部门关联）
   .get('/', requireAuth, async c => {
-    const rows = await db.select().from(knowledgeBase).orderBy(desc(knowledgeBase.isDefault), knowledgeBase.createdAt)
+    const visible = getVisibleKbIds(c.get('user'))
+    let rows = await db.select().from(knowledgeBase).orderBy(desc(knowledgeBase.isDefault), knowledgeBase.createdAt)
+    if (visible !== null) {
+      const allow = new Set(visible)
+      rows = rows.filter(r => allow.has(r.id))
+    }
     const counts = await db
       .select({ kb: document.knowledgeBaseId, n: sql<number>`count(*)` })
       .from(document)
       .groupBy(document.knowledgeBaseId)
     const countMap = new Map(counts.map(r => [r.kb, Number(r.n)]))
-    return c.json(rows.map(r => ({ ...r, documentCount: countMap.get(r.id) ?? 0 })))
+    // 管理员额外返回每个 KB 关联的部门 id 列表
+    const deptMap = new Map<string, string[]>()
+    if (isAdmin(c.get('user'))) {
+      const links = await db.select().from(knowledgeBaseDepartment)
+      for (const l of links) {
+        const arr = deptMap.get(l.knowledgeBaseId) ?? []
+        arr.push(l.departmentId)
+        deptMap.set(l.knowledgeBaseId, arr)
+      }
+    }
+    return c.json(rows.map(r => ({
+      ...r,
+      documentCount: countMap.get(r.id) ?? 0,
+      departmentIds: deptMap.get(r.id) ?? []
+    })))
   })
   // 创建知识库
   .post('/', requireAdmin, zValidator('json', z.object({
@@ -59,6 +79,7 @@ const app = new Hono<AuthEnv>()
     const id = c.req.param('id')
     const docs = await db.select({ id: document.id }).from(document).where(eq(document.knowledgeBaseId, id))
     await db.delete(document).where(eq(document.knowledgeBaseId, id))
+    await db.delete(knowledgeBaseDepartment).where(eq(knowledgeBaseDepartment.knowledgeBaseId, id))
     await db.delete(knowledgeBase).where(eq(knowledgeBase.id, id))
     // 删除原文件目录
     await Promise.all(docs.map(d => rm(join(UPLOAD_DIR, d.id), { recursive: true, force: true }).catch(() => {})))

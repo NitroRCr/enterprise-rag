@@ -55,6 +55,7 @@
             :message="messageMap[current]"
             :child-num="dialog!.msgTree[parent]?.length ?? 1"
             :item-map="itemMap"
+            :knowledge-base-ids="dialog!.knowledgeBaseIds"
             :scroll-container="scrollContainer"
             :dense="dense"
             :inputing="current === chain.at(-1)"

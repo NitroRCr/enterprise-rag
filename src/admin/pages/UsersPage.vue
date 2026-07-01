@@ -39,6 +39,24 @@
             >—</span>
           </q-td>
         </template>
+        <template #body-cell-department="props">
+          <q-td :props="props">
+            <q-select
+              :model-value="props.row.departmentId ?? null"
+              :options="deptOptions"
+              dense
+              outlined
+              options-dense
+              emit-value
+              map-options
+              clearable
+              color="pri"
+              label="未分配"
+              style="min-width: 140px"
+              @update:model-value="v => assignDept(props.row, v)"
+            />
+          </q-td>
+        </template>
         <template #body-cell-actions="props">
           <q-td
             :props="props"
@@ -78,9 +96,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { Dialog as QDialog, Notify, type QTableColumn } from 'quasar'
 import { authClient } from 'src/utils/auth-client'
+import { api, unwrap } from 'src/utils/hc'
+import type { Department } from 'app/src-shared/utils/types'
 
 interface AdminUser {
   id: string
@@ -88,16 +108,21 @@ interface AdminUser {
   name: string
   role?: string | null
   banned?: boolean | null
+  departmentId?: string | null
   createdAt: string | Date
 }
 
 const users = ref<AdminUser[]>([])
+const departments = ref<Department[]>([])
 const loading = ref(false)
+
+const deptOptions = computed(() => departments.value.map(d => ({ label: d.name, value: d.id })))
 
 const columns: QTableColumn[] = [
   { name: 'name', label: '姓名', field: 'name', align: 'left' },
   { name: 'email', label: '邮箱', field: 'email', align: 'left' },
   { name: 'role', label: '角色', field: 'role', align: 'center' },
+  { name: 'department', label: '部门', field: 'departmentId', align: 'left' },
   { name: 'banned', label: '状态', field: 'banned', align: 'center' },
   { name: 'createdAt', label: '注册时间', field: 'createdAt', align: 'left', format: (v: string) => new Date(v).toLocaleString('zh-CN') },
   { name: 'actions', label: '操作', field: 'id', align: 'right' }
@@ -106,13 +131,28 @@ const columns: QTableColumn[] = [
 async function load() {
   loading.value = true
   try {
-    const res = await authClient.admin.listUsers({ query: { limit: 100 } })
-    users.value = (res.data?.users ?? []) as AdminUser[]
+    const [res, depts, userMap] = await Promise.all([
+      authClient.admin.listUsers({ query: { limit: 100 } }),
+      unwrap<Department[]>(await api.departments.$get()),
+      unwrap<{ id: string; departmentId: string | null }[]>(await api.departments['user-map'].$get())
+    ])
+    departments.value = depts
+    const deptById = new Map(userMap.map(u => [u.id, u.departmentId]))
+    users.value = ((res.data?.users ?? []) as AdminUser[]).map(u => ({
+      ...u,
+      departmentId: deptById.get(u.id) ?? null
+    }))
   } catch (e) {
     Notify.create({ message: (e as Error).message, color: 'err', textColor: 'on-err' })
   } finally {
     loading.value = false
   }
+}
+
+async function assignDept(u: AdminUser, departmentId: string | null) {
+  u.departmentId = departmentId
+  await unwrap(await api.departments.users[':userId'].$patch({ param: { userId: u.id }, json: { departmentId } }))
+  Notify.create({ message: '部门已更新', color: 'suc', textColor: 'on-suc', timeout: 800 })
 }
 
 async function toggleRole(u: AdminUser) {

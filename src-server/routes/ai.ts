@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { db } from '../utils/db'
 import { model, provider } from '../schema'
 import { requireAuth, type AuthEnv } from '../utils/auth-guard'
+import { logCall } from '../utils/observability'
 
 const app = new Hono<AuthEnv>()
   .post('/chat/completions', requireAuth, zValidator('json', z.looseObject({
@@ -13,6 +14,7 @@ const app = new Hono<AuthEnv>()
   })), async c => {
     const body = c.req.valid('json')
     const modelName = body.model
+    const userId = c.get('user').id
 
     // 按模型名查找对应服务商
     const row = db
@@ -26,14 +28,24 @@ const app = new Hono<AuthEnv>()
     if (!row.enabled) return c.json({ error: 'Provider disabled' }, 403)
 
     const baseUrl = row.baseUrl.replace(/\/$/, '')
-    const upstream = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${row.apiKey}`
-      },
-      body: JSON.stringify(body)
-    })
+    const started = performance.now()
+    let upstream: Response
+    try {
+      upstream = await fetch(`${baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${row.apiKey}`
+        },
+        body: JSON.stringify(body)
+      })
+    } catch (err) {
+      logCall({ type: 'model', userId, modelName, durationMs: performance.now() - started, success: false })
+      throw err
+    }
+
+    // 记录模型调用（不消费响应体，保证 SSE 透传零改动）
+    logCall({ type: 'model', userId, modelName, durationMs: performance.now() - started, success: upstream.ok })
 
     if (!upstream.ok || !upstream.body) {
       return new Response(upstream.body, { status: upstream.status })

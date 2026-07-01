@@ -8,6 +8,17 @@ export interface KnowledgeBase {
   isDefault: boolean
   createdAt: number
   documentCount?: number
+  /** 关联的部门 id 列表（管理端返回） */
+  departmentIds?: string[]
+}
+
+/** 部门 */
+export interface Department {
+  id: string
+  name: string
+  createdAt: number
+  /** 该部门下的用户数（管理端返回） */
+  userCount?: number
 }
 
 /** 文档元信息 */
@@ -72,4 +83,73 @@ export interface GlobalSettings {
 export interface PublicConfig {
   siteName: string
   hasAdmin: boolean
+}
+
+/** 反馈评分：1 好评 / -1 差评 */
+export type FeedbackRating = 1 | -1
+
+/** 用户对助手回答的反馈 */
+export interface Feedback {
+  messageId: string
+  userId: string
+  knowledgeBaseIds: string[]
+  modelName: string | null
+  rating: FeedbackRating
+  createdAt: number
+}
+
+/** 调用日志类型 */
+export type CallType = 'model' | 'kb'
+
+/** 调用日志 */
+export interface CallLog {
+  id: string
+  type: CallType
+  userId: string | null
+  modelName?: string | null
+  knowledgeBaseIds?: string[] | null
+  query?: string | null
+  resultCount?: number | null
+  durationMs: number
+  success: boolean
+  createdAt: number
+}
+
+/** 概览统计 */
+export interface OverviewStats {
+  documentCount: number
+  userCount: number
+  knowledgeBaseCount: number
+  departmentCount: number
+  modelCallCount: number
+  kbCallCount: number
+  totalFeedback: number
+  positiveFeedback: number
+  /** 整体满意度（好评率），无反馈时为 null */
+  satisfaction: number | null
+}
+
+/** 调用量时间序列：每个时间桶一条记录，series 为各分段（知识库或模型）名称到数量的映射 */
+export interface CallSeriesPoint {
+  bucket: string
+  counts: Record<string, number>
+}
+
+/** 调用量序列响应 */
+export interface CallSeries {
+  /** 分段的 key 列表（知识库 id 或 模型名） */
+  keys: string[]
+  /** key -> 展示名 */
+  labels: Record<string, string>
+  points: CallSeriesPoint[]
+}
+
+/** 每个知识库的满意度 */
+export interface KbSatisfaction {
+  knowledgeBaseId: string
+  name: string
+  positive: number
+  negative: number
+  /** 好评率，无反馈为 null */
+  rate: number | null
 }

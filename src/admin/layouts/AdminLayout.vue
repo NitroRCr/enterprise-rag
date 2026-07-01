@@ -147,7 +147,9 @@ const siteName = ref('企业知识库')
 const acquiring = ref(false)
 
 const nav = [
+  { to: '/overview', label: '概览', icon: 'sym_o_dashboard' },
   { to: '/knowledge-bases', label: '知识库', icon: 'sym_o_menu_book' },
+  { to: '/departments', label: '部门', icon: 'sym_o_apartment' },
   { to: '/providers', label: '服务商', icon: 'sym_o_dns' },
   { to: '/models', label: '模型', icon: 'sym_o_smart_toy' },
   { to: '/settings', label: '默认设置', icon: 'sym_o_settings' },

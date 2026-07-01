@@ -56,6 +56,8 @@ export interface Message {
   error?: string
   /** 生成该消息所用模型名 */
   modelName?: string
+  /** 用户对该助手回答的反馈：1 好评 / -1 差评 / 未反馈 */
+  feedback?: 1 | -1 | null
   createdAt: number
 }
 
