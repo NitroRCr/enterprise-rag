@@ -30,7 +30,8 @@ const app = new Hono<AuthEnv>()
   // 批量上传文档（multipart/form-data）
   .post('/upload', requireAdmin, async c => {
     const form = await c.req.formData()
-    const knowledgeBaseId = form.get('knowledgeBaseId')?.toString()
+    const kbEntry = form.get('knowledgeBaseId')
+    const knowledgeBaseId = typeof kbEntry === 'string' ? kbEntry : undefined
     if (!knowledgeBaseId) return c.json({ error: 'knowledgeBaseId required' }, 400)
     const kb = db.select().from(knowledgeBase).where(eq(knowledgeBase.id, knowledgeBaseId)).get()
     if (!kb) return c.json({ error: 'Knowledge base not found' }, 404)

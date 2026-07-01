@@ -10,9 +10,9 @@
       class="bg-transparent"
       no-data-label="该知识库暂无文档"
     >
-      <template #body-cell-actions="props">
+      <template #body-cell-actions="cellProps">
         <q-td
-          :props="props"
+          :props="cellProps"
           class="text-right"
         >
           <q-btn
@@ -21,7 +21,7 @@
             round
             size="sm"
             icon="sym_o_visibility"
-            @click="preview(props.row)"
+            @click="preview(cellProps.row)"
           >
             <q-tooltip>查看</q-tooltip>
           </q-btn>
@@ -31,7 +31,7 @@
             round
             size="sm"
             icon="sym_o_download"
-            @click="download(props.row.id)"
+            @click="download(cellProps.row.id)"
           >
             <q-tooltip>下载原文件</q-tooltip>
           </q-btn>
@@ -42,7 +42,7 @@
             size="sm"
             icon="sym_o_delete"
             class="text-err"
-            @click="remove(props.row)"
+            @click="remove(cellProps.row)"
           >
             <q-tooltip>删除</q-tooltip>
           </q-btn>

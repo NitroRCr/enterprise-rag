@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
 import { sql } from 'drizzle-orm'
 import { db } from '../utils/db'
-import { callLog, department, document, feedback, knowledgeBase, model, user } from '../schema'
+import { department, document, feedback, knowledgeBase, model, user } from '../schema'
 import { requireAdmin, type AuthEnv } from '../utils/auth-guard'
 import type { CallSeries, CallSeriesPoint, KbSatisfaction, OverviewStats } from 'app/src-shared/utils/types'
 

@@ -20,10 +20,16 @@ async function parseDocx(buf: ArrayBuffer): Promise<ParseResult> {
   return { content: result.value, language: 'html' }
 }
 
+function cellToString(c: unknown): string {
+  if (c == null) return ''
+  if (typeof c === 'object') return JSON.stringify(c)
+  return String(c as string | number | boolean | bigint | symbol)
+}
+
 function rowsToMarkdown(rows: unknown[][]) {
   if (!rows.length) return ''
-  const head = rows[0].map(c => (c == null ? '' : String(c)))
-  const body = rows.slice(1).map(r => r.map(c => (c == null ? '' : String(c))))
+  const head = rows[0].map(cellToString)
+  const body = rows.slice(1).map(r => r.map(cellToString))
   const headerLine = '| ' + head.join(' | ') + ' |'
   const sepLine = '| ' + head.map(() => '---').join(' | ') + ' |'
   const bodyLines = body.map(r => '| ' + r.join(' | ') + ' |')
