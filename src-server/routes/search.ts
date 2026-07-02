@@ -6,6 +6,7 @@ import { db } from '../utils/db'
 import { requireAuth, type AuthEnv } from '../utils/auth-guard'
 import { getVisibleKbIds } from '../utils/access'
 import { logCall } from '../utils/observability'
+import { buildFtsMatch } from '../utils/fts'
 import type { SearchResult } from 'app/src-shared/utils/types'
 
 interface Row {
@@ -40,8 +41,12 @@ const app = new Hono<AuthEnv>()
       }
     }
 
-    // 将查询词作为 FTS5 短语处理，转义内部双引号，避免语法字符破坏匹配
-    const match = `"${query.replace(/"/g, '""')}"`
+    // 按空白拆词，每个词作为独立短语并用 OR 连接，提升多词查询召回
+    const match = buildFtsMatch(query)
+    if (!match) {
+      logCall({ type: 'kb', userId, knowledgeBaseIds: effectiveKbIds, query, resultCount: 0, durationMs: 0, success: true })
+      return c.json([] as SearchResult[])
+    }
 
     const kbFilter = effectiveKbIds.length > 0
       ? sql`AND d.knowledge_base_id IN (${sql.join(effectiveKbIds.map(id => sql`${id}`), sql`, `)})`
@@ -54,7 +59,7 @@ const app = new Hono<AuthEnv>()
         d.name AS name,
         d.knowledge_base_id AS knowledgeBaseId,
         kb.name AS knowledgeBaseName,
-        snippet(document_fts, 1, '<mark>', '</mark>', ' … ', 24) AS snippet
+        snippet(document_fts, 1, '<mark>', '</mark>', ' … ', 240) AS snippet
       FROM document_fts
       JOIN document d ON d.rowid = document_fts.rowid
       JOIN knowledge_base kb ON kb.id = d.knowledge_base_id

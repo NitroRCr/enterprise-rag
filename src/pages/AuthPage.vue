@@ -82,11 +82,13 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Notify } from 'quasar'
-import { signIn, signUp } from 'src/utils/auth-client'
+import { authClient, signIn, signUp } from 'src/utils/auth-client'
 import { api, unwrap } from 'src/utils/hc'
 
 const route = useRoute()
 const router = useRouter()
+
+const session = authClient.useSession()
 
 const mode = ref<'signin' | 'signup'>('signin')
 const name = ref('')
@@ -116,6 +118,7 @@ async function submit() {
     if (res.error) {
       Notify.create({ message: res.error.message || '操作失败', color: 'err', textColor: 'on-err' })
     } else {
+      await session.value.refetch?.()
       const redirect = (route.query.redirect as string) || '/'
       await router.replace(redirect)
     }

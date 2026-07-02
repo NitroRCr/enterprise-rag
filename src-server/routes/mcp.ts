@@ -9,6 +9,7 @@ import { auth } from '../auth/auth'
 import { getUserKbIds } from '../utils/access'
 import { logCall } from '../utils/observability'
 import { SERVER_URL } from '../utils/config'
+import { buildFtsMatch } from '../utils/fts'
 
 interface SearchRow {
   id: string
@@ -21,7 +22,8 @@ interface SearchRow {
 /** 在指定知识库集合内执行 FTS5 全文搜索 */
 function searchKb(query: string, kbIds: string[], limit: number): SearchRow[] {
   if (kbIds.length === 0) return []
-  const match = `"${query.replace(/"/g, '""')}"`
+  const match = buildFtsMatch(query)
+  if (!match) return []
   const kbFilter = sql`AND d.knowledge_base_id IN (${sql.join(kbIds.map(id => sql`${id}`), sql`, `)})`
   return db.all<SearchRow>(sql`
     SELECT
@@ -29,7 +31,7 @@ function searchKb(query: string, kbIds: string[], limit: number): SearchRow[] {
       d.name AS name,
       d.knowledge_base_id AS knowledgeBaseId,
       kb.name AS knowledgeBaseName,
-      snippet(document_fts, 1, '<mark>', '</mark>', ' … ', 24) AS snippet
+      snippet(document_fts, 1, '<mark>', '</mark>', ' … ', 240) AS snippet
     FROM document_fts
     JOIN document d ON d.rowid = document_fts.rowid
     JOIN knowledge_base kb ON kb.id = d.knowledge_base_id

@@ -73,6 +73,7 @@
             :id="`adm-${previewDoc.id}`"
             :model-value="previewContent"
             :theme="isDark ? 'dark' : 'light'"
+            bg-sur-c
           />
         </q-card-section>
       </q-card>

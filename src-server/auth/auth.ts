@@ -27,12 +27,6 @@ export const auth = betterAuth({
       verify: ({ password, hash }) => Bun.password.verify(password, hash)
     }
   },
-  session: {
-    cookieCache: {
-      enabled: true,
-      maxAge: 300
-    }
-  },
   plugins: [
     admin(),
     // MCP OAuth（动态客户端注册 + 授权码），loginPage 指向用户端登录页

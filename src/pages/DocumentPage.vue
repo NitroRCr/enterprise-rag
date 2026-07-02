@@ -63,6 +63,7 @@
           :theme="isDark ? 'dark' : 'light'"
           preview-theme="default"
           code-theme="atom"
+          bg-sur
         />
       </div>
     </q-scroll-area>
