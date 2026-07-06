@@ -1,0 +1,25 @@
+FROM --platform=$BUILDPLATFORM imbios/bun-node:22-slim AS builder
+
+WORKDIR /app
+
+COPY bun.lock package.json ./
+RUN bun install
+
+COPY . .
+
+RUN bun quasar prepare
+# 用户端与管理端均为默认 SPA 构建（输出到 dist/spa），依次构建后分别归档
+RUN bun run build:front && mv dist/spa dist/front
+RUN bun run build:admin && mv dist/spa dist/admin
+
+FROM caddy:2-alpine AS runner
+
+WORKDIR /srv
+
+COPY --from=builder /app/dist/front  ./front
+COPY --from=builder /app/dist/admin  ./admin
+
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# 8080: 用户端  8081: 管理端
+EXPOSE 8080 8081

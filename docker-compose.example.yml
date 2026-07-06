@@ -1,0 +1,40 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    # 或使用已发布镜像：
+    # image: krytro/enterprise-rag-server:latest
+    environment:
+      SITE_NAME: '企业知识库'
+      # 生产务必替换为随机密钥
+      BETTER_AUTH_SECRET: update-this
+      PORT: 3000
+      # 用户端 / 管理端对外访问地址（用于 better-auth 可信来源）
+      FRONT_URL: http://localhost:8080
+      ADMIN_URL: http://localhost:8081
+      # 数据库与上传目录（已在镜像中默认指向卷）
+      DB_PATH: /app/data/app.db
+      UPLOAD_DIR: /app/uploads
+    volumes:
+      - app-data:/app/data
+      - app-uploads:/app/uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    # 或使用已发布镜像：
+    # image: krytro/enterprise-rag-web:latest
+    ports:
+      - 8080:8080 # 用户端
+      - 8081:8081 # 管理端
+    environment:
+      # 前端 /api 反向代理到后端服务
+      SERVER_URL: http://server:3000
+    depends_on:
+      - server
+
+volumes:
+  app-data:
+  app-uploads:

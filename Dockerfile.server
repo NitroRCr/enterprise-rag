@@ -1,0 +1,27 @@
+FROM oven/bun:1-slim AS builder
+
+WORKDIR /app
+
+COPY bun.lock package.json ./
+RUN bun install
+
+COPY . .
+
+RUN bun quasar prepare
+RUN bun run build:server
+
+FROM oven/bun:1-slim AS runner
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=builder /app/dist/server .
+
+# SQLite 数据库与上传文件目录（挂载为持久化卷）
+ENV DB_PATH=/app/data/app.db
+ENV UPLOAD_DIR=/app/uploads
+VOLUME ["/app/data", "/app/uploads"]
+
+EXPOSE 3000
+
+CMD ["bun", "index.js"]
