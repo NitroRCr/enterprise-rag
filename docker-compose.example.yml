@@ -3,8 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.server
-    # 或使用已发布镜像：
-    # image: krytro/enterprise-rag-server:latest
     environment:
       SITE_NAME: '企业知识库'
       # 生产务必替换为随机密钥
@@ -24,8 +22,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.web
-    # 或使用已发布镜像：
-    # image: krytro/enterprise-rag-web:latest
     ports:
       - 8080:8080 # 用户端
       - 8081:8081 # 管理端

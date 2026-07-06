@@ -104,6 +104,49 @@ bun run build:front         # 用户端静态资源
 bun run build:admin         # 管理端静态资源
 ```
 
+## Docker 部署
+
+提供两个容器：**服务端**（Bun 运行 Hono）与 **Web 端**（Caddy 托管用户端/管理端静态资源并反代 `/api`）。
+
+| 文件 | 说明 |
+| --- | --- |
+| `Dockerfile.server` | 后端镜像，`bun build` 打包后由 Bun 运行；SQLite 表启动时自动创建，无需迁移 |
+| `Dockerfile.web` | 前端镜像，依次构建 front/admin（均为 SPA，各自归档），由 Caddy 分端口托管 |
+| `Caddyfile` | `:8080` 用户端、`:8081` 管理端，`/api/*` 反代到 `SERVER_URL`，其余走 SPA 回退 |
+| `docker-compose.example.yml` | 编排 `server` + `web`，含数据/上传持久化卷 |
+
+### 一键启动
+
+```bash
+docker compose -f docker-compose.example.yml up --build
+# 用户端 http://localhost:8080
+# 管理端 http://localhost:8081
+```
+
+### 环境变量
+
+服务端（`server`）：
+
+| 变量 | 说明 | 默认 |
+| --- | --- | --- |
+| `SITE_NAME` | 站点名称 | 企业知识库 |
+| `BETTER_AUTH_SECRET` | 鉴权密钥（**生产务必替换为随机值**） | dev-secret-change-me |
+| `PORT` | 服务端端口 | 3000 |
+| `FRONT_URL` / `ADMIN_URL` | 用户端/管理端对外地址（better-auth 可信来源校验） | localhost:9100 / :9200 |
+| `DB_PATH` | SQLite 数据库文件路径（镜像内默认指向 `/app/data` 卷） | /app/data/app.db |
+| `UPLOAD_DIR` | 原文件存储目录（镜像内默认指向 `/app/uploads` 卷） | /app/uploads |
+
+Web 端（`web`）：
+
+| 变量 | 说明 |
+| --- | --- |
+| `SERVER_URL` | Caddy 反代 `/api` 的后端地址，compose 内为 `http://server:3000` |
+
+### 持久化
+
+- `app-data` 卷 → `/app/data`：SQLite 数据库。
+- `app-uploads` 卷 → `/app/uploads`：上传的原始文件。
+
 ## 设计要点
 
 - **FTS5 外部内容表 + 触发器**：`document` 表内容/名称通过触发器自动同步到 `document_fts`，使用 `bm25()` 排序、`snippet()` 生成高亮片段；trigram 分词器对中英文混合友好（不可用时自动降级 unicode61）。
