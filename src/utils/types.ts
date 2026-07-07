@@ -63,6 +63,8 @@ export interface Message {
 
 export interface Dialog {
   id: string
+  /** 所属用户 id（本地对话分用户隔离；隔离前的历史数据可能为空） */
+  userId?: string
   title: string
   knowledgeBaseIds: string[]
   modelName: string | null

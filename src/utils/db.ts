@@ -23,6 +23,13 @@ class AppDexie extends Dexie {
       await tx.table('messages').clear()
       await tx.table('dialogs').clear()
     })
+    // v3：对话按用户隔离，dialogs 增加 userId 索引。
+    // 隔离前创建的历史对话无 userId（保持为空），由登录后的 setUser 归属给当前用户。
+    this.version(3).stores({
+      dialogs: 'id, userId, updatedAt',
+      messages: 'id, dialogId, createdAt',
+      items: 'id, dialogId'
+    })
   }
 }
 

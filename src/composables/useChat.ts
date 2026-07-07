@@ -13,6 +13,8 @@ import { buildModelMessages, expandMessageTree, getChain } from 'src/utils/chat-
 
 // ----- 模块级单例响应式状态（侧边栏与对话页共享） -----
 const dialogs = ref<Dialog[]>([])
+/** 当前登录用户 id：本地对话按此隔离，未登录为 null */
+const currentUserId = ref<string | null>(null)
 const currentDialogId = ref<string | null>(null)
 const dialog = ref<Dialog | null>(null)
 const messages = ref<Message[]>([])
@@ -59,12 +61,25 @@ const inputEmpty = computed(() => !inputContent.value?.text?.trim() && !inputCon
 // ----- liveQuery 订阅 -----
 let started = false
 let dialogSub: Subscription | undefined
+let dialogsSub: Subscription | undefined
 function ensureStarted() {
   if (started) return
   started = true
-  liveQuery(() => db.dialogs.orderBy('updatedAt').reverse().toArray()).subscribe({
-    next: v => { dialogs.value = v; loaded.value = true }
-  })
+  // 对话列表：按当前登录用户隔离，切换用户时重新订阅
+  watch(currentUserId, uid => {
+    dialogsSub?.unsubscribe()
+    dialogsSub = undefined
+    if (!uid) {
+      dialogs.value = []
+      loaded.value = true
+      return
+    }
+    dialogsSub = liveQuery(async () =>
+      (await db.dialogs.where('userId').equals(uid).sortBy('updatedAt')).reverse()
+    ).subscribe({
+      next: v => { dialogs.value = v; loaded.value = true }
+    })
+  }, { immediate: true })
   watch(currentDialogId, id => {
     dialogSub?.unsubscribe()
     dialogSub = undefined
@@ -94,7 +109,25 @@ function ensureStarted() {
 // ----- 对话管理 -----
 async function refreshDialogs() {
   ensureStarted()
-  dialogs.value = await db.dialogs.orderBy('updatedAt').reverse().toArray()
+  const uid = currentUserId.value
+  dialogs.value = uid
+    ? (await db.dialogs.where('userId').equals(uid).sortBy('updatedAt')).reverse()
+    : []
+}
+
+/**
+ * 设置当前登录用户（登录 / 切换 / 登出时调用）。
+ * 用户变化时清空当前选中对话，避免展示上一个用户的会话；
+ * 首次登录会把隔离前遗留的无归属对话归属给当前用户，避免历史数据丢失。
+ */
+async function setUser(userId: string | null) {
+  if (userId === currentUserId.value) return
+  ensureStarted()
+  currentDialogId.value = null
+  if (userId) {
+    await db.dialogs.filter(d => !d.userId).modify({ userId })
+  }
+  currentUserId.value = userId
 }
 
 function selectDialog(id: string | null) {
@@ -109,6 +142,7 @@ async function createDialog(knowledgeBaseIds: string[], modelName: string | null
   const rootChildId = genId()
   const d: Dialog = {
     id,
+    userId: currentUserId.value ?? undefined,
     title: '新对话',
     knowledgeBaseIds,
     modelName,
@@ -458,6 +492,7 @@ export function useChat() {
     generating,
     loaded,
     refreshDialogs,
+    setUser,
     selectDialog,
     createDialog,
     deleteDialog,

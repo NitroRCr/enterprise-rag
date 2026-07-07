@@ -18,7 +18,7 @@ const app = new Hono<AuthEnv>()
   // 概览统计卡片数据
   .get('/overview', requireAdmin, async c => {
     const count = (expr: ReturnType<typeof sql>) =>
-      Number((db.get<{ n: number }>(expr))?.n ?? 0)
+      Number((db.all<{ n: number }>(expr))[0]?.n ?? 0)
 
     const stats: OverviewStats = {
       documentCount: await db.$count(document),

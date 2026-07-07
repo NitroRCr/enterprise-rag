@@ -93,7 +93,7 @@ import ConversationList from 'components/ConversationList.vue'
 
 const router = useRouter()
 const settings = useSettingsStore()
-const { refreshDialogs } = useChat()
+const { refreshDialogs, setUser } = useChat()
 
 const drawer = ref(true)
 const session = authClient.useSession()
@@ -104,9 +104,13 @@ let initialized = false
 watch(session, async s => {
   if (s.isPending) return
   if (!s.data) {
+    await setUser(null)
+    initialized = false
     router.replace({ name: 'auth', query: { redirect: router.currentRoute.value.fullPath } })
     return
   }
+  // 切换当前用户，使本地对话按用户隔离
+  await setUser(s.data.user.id)
   if (!initialized) {
     initialized = true
     await settings.load().catch(() => {})

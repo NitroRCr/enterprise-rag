@@ -112,6 +112,7 @@ interface AdminUser {
   createdAt: string | Date
 }
 
+const session = authClient.useSession()
 const users = ref<AdminUser[]>([])
 const departments = ref<Department[]>([])
 const loading = ref(false)
@@ -156,6 +157,11 @@ async function assignDept(u: AdminUser, departmentId: string | null) {
 }
 
 async function toggleRole(u: AdminUser) {
+  // 防止管理员将自己降级
+  if (u.id === session.value.data?.user.id && u.role === 'admin') {
+    Notify.create({ message: '不能降级自己的管理员角色', color: 'warn', textColor: 'on-warn' })
+    return
+  }
   const role = u.role === 'admin' ? 'user' : 'admin'
   const res = await authClient.admin.setRole({ userId: u.id, role })
   if (res.error) return Notify.create({ message: res.error.message || '操作失败', color: 'err', textColor: 'on-err' })
@@ -171,6 +177,11 @@ async function toggleBan(u: AdminUser) {
 }
 
 function remove(u: AdminUser) {
+  // 防止管理员删除自己
+  if (u.id === session.value.data?.user.id) {
+    Notify.create({ message: '不能删除自己的账号', color: 'warn', textColor: 'on-warn' })
+    return
+  }
   QDialog.create({
     title: '删除用户',
     message: `确定删除「${u.email}」？`,
