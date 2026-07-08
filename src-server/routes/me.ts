@@ -6,7 +6,7 @@ import { requireAuth, type AuthEnv } from '../utils/auth-guard'
 
 const app = new Hono<AuthEnv>()
   // 当前登录用户的资料（含所属部门名称）
-  .get('/', requireAuth, async c => {
+  .get('/', requireAuth, c => {
     const u = c.get('user')
     const row = db
       .select({
