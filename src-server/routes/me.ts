@@ -8,7 +8,7 @@ const app = new Hono<AuthEnv>()
   // 当前登录用户的资料（含所属部门名称）
   .get('/', requireAuth, async c => {
     const u = c.get('user')
-    const row = await db
+    const row = db
       .select({
         id: user.id,
         name: user.name,
