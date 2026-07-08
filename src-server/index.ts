@@ -11,6 +11,7 @@ import providers from './routes/providers'
 import models from './routes/models'
 import settings from './routes/settings'
 import departments from './routes/departments'
+import me from './routes/me'
 import feedback from './routes/feedback'
 import analytics from './routes/analytics'
 import mcp from './routes/mcp'
@@ -33,6 +34,7 @@ export const app = new Hono()
   .route('/models', models)
   .route('/settings', settings)
   .route('/departments', departments)
+  .route('/me', me)
   .route('/feedback', feedback)
   .route('/analytics', analytics)
   .route('/mcp', mcp)

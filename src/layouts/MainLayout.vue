@@ -54,6 +54,16 @@
               <q-item
                 v-close-popup
                 clickable
+                @click="goAccount"
+              >
+                <q-item-section avatar>
+                  <q-icon name="sym_o_manage_accounts" />
+                </q-item-section>
+                <q-item-section>账号设置</q-item-section>
+              </q-item>
+              <q-item
+                v-close-popup
+                clickable
                 @click="logout"
               >
                 <q-item-section avatar>
@@ -123,6 +133,9 @@ function toggleDark() {
 }
 function goHome() {
   router.push('/')
+}
+function goAccount() {
+  router.push({ name: 'account' })
 }
 async function logout() {
   await signOut()
